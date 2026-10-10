@@ -1,0 +1,16 @@
+{
+  "id": "myext",
+  "name": "我的扩展",
+  "summary": "一句话说明它是干什么的（商店列表里显示这一句）",
+  "icon": "key",
+  "homepage": "https://github.com/Yumina0789/myext",
+  "latest": "1.0.0",
+  "versions": {
+    "1.0.0": {
+      "url": "packages/myext-1.0.0.tar.gz",
+      "sha256": "<sha256sum packages/myext-1.0.0.tar.gz 的输出>",
+      "size": 12345,
+      "min_panel": "1.0"
+    }
+  }
+}

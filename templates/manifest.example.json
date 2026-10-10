@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "id": "kms",
+  "name": "KMS 激活服务",
+  "version": "1.0.0",
+  "summary": "vlmcsd + 管理面板，为 Windows / Office 提供 KMS 激活",
+  "icon": "key",
+  "homepage": "https://github.com/Yumina0789/V1mc4d",
+
+  "compose": {
+    "file": "compose.yml",
+    "project": "n1bus-kms",
+    "services": ["vlmcsd", "v1m-dash"]
+  },
+
+  "ports": [
+    {"port": 1688, "proto": "tcp", "expose": true,  "note": "KMS 客户端（裸 TCP，不经反代）"},
+    {"port": 8099, "proto": "tcp", "expose": false, "note": "管理 API，仅回环"}
+  ],
+
+  "api": {
+    "upstream": "http://127.0.0.1:8099",
+    "token_file": "/var/lib/n1bus/extensions/kms/token",
+    "writes": {
+      "service":         ["/api/service",        ["action"]],
+      "config_rollback": ["/api/config/rollback", []],
+      "unban":           ["/api/limits/unban",   ["ip"]],
+      "stats_prune":     ["/api/stats/prune",    []],
+      "stats_clear":     ["/api/stats/clear",    ["confirm"]]
+    }
+  },
+
+  "page": {
+    "kind": "both",
+    "title": "KMS",
+    "sections": [
+      {"type": "status",  "label": "服务状态", "from": "service"},
+      {"type": "kv",      "label": "激活统计", "from": "stats"},
+      {"type": "table",   "label": "最近激活", "from": "recent"},
+      {"type": "actions", "items": ["ext.start", "ext.stop", "ext.restart"]}
+    ],
+    "iframe": {"label": "工作台", "path": "/dsh/"}
+  }
+}
