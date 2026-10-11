@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "rsc4d",
   "name": "KMS 激活服务",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），带状态页与按来源的连接限流",
   "icon": "key",
   "homepage": "https://github.com/Yumina0789/RSC4D",

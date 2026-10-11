@@ -12,6 +12,10 @@
 
 global
 	maxconn 4096
+	# **必须单线程**：stick-table 是每个线程各一份的，容器里默认按 CPU 数起 2 个线程，
+	# 同一个来源的连接会分散到两张表上，计数永远攒不起来 —— 表现是限流时灵时不灵。
+	# 这个前端只是转发短连接，单线程绰绰有余。
+	nbthread 1
 	# 容器里没有 syslog，日志直接走 stdout（docker logs 看得到被拒的来源）
 	log stdout format raw local0
 

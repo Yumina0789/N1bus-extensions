@@ -93,15 +93,14 @@
   var elRate  = document.getElementById("rate");
   var elWin   = document.getElementById("cmdWin");
   var elOff   = document.getElementById("cmdOffice");
-  var PORT    = 1688;
 
   function paint(host, cfg){
-    var kms = host + ":" + PORT;
-    elHost.textContent = kms;
-    elWin.textContent = "slmgr /skms " + kms + "\nslmgr /ato";
+    // 端口不印出来：1688 是 KMS 的默认端口，slmgr 与 ospp.vbs 不带端口时用的就是它。
+    // 写上去反而让人以为「必须写端口」。
+    elHost.textContent = host;
+    elWin.textContent = "slmgr /skms " + host + "\nslmgr /ato";
     elOff.textContent =
       'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /sethst:' + host + "\n" +
-      'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /setprt:' + PORT + "\n" +
       'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /act';
     elRate.textContent = cfg
       ? ("每个来源 " + cfg.KMS_BAN_TIME + " 秒内最多 " + cfg.KMS_RATE_LIMIT + " 次连接")
