@@ -1,39 +1,26 @@
 {
   "schema": 1,
-  "id": "myext",
-  "name": "我的模块",
+  "id": "example",
+  "name": "示例模块",
   "version": "1.0.0",
-  "summary": "一句话说明它是干什么的（商店列表里显示这一句）",
-  "icon": "key",
-  "homepage": "https://github.com/Yumina0789/myext",
+  "summary": "一句话说清它做什么（会显示在商店列表里）",
+  "icon": "plug",
+  "homepage": "https://github.com/Yumina0789/N1bus-modules",
 
   "compose": {
     "file": "compose.yml",
-    "project": "n1bus-myext",
-    "services": ["app"]
+    "project": "n1bus-example"
   },
 
   "ports": [
-    {"port": 9000, "proto": "tcp", "expose": false, "note": "只给本体读的 API"}
+    {"port": 8080, "proto": "tcp", "expose": false,
+     "note": "仅用于面板展示；本体不会据此改防火墙"}
   ],
 
-  "api": {
-    "upstream": "http://127.0.0.1:9000",
-    "writes": {
-      "restart_service": ["/api/service", ["action"]]
-    }
-  },
-
   "page": {
-    "kind": "declared",
-    "title": "我的模块",
-    "sections": [
-      {"type": "status", "label": "服务状态"},
-      {"type": "actions", "items": ["module.start", "module.stop", "module.restart"]},
-      {"type": "kv", "label": "概况", "from": "summary"},
-      {"type": "table", "label": "明细", "from": "items"},
-      {"type": "log", "label": "日志",
-       "source": {"kind": "container-log", "container": "n1bus-myext-app", "tail": 200}}
-    ]
+    "kind": "iframe",
+    "title": "示例模块",
+    "url": "/m/example/",
+    "upstream": "n1bus-example-web:80"
   }
 }

@@ -1,15 +1,21 @@
 {
-  "id": "myext",
-  "name": "我的模块",
-  "summary": "一句话说明它是干什么的（商店列表里显示这一句）",
-  "icon": "key",
-  "homepage": "https://github.com/Yumina0789/myext",
+  "_说明": [
+    "index.json 由 tools/pack.py 自动回填，通常不需要手写这一份。",
+    "这里放的是单个模块在 index.json 里的形状，供核对与排障。",
+    "sha256 与 size 都是必填：本体先比 size（低成本粗筛），再比 sha256（权威）。",
+    "url 若写成绝对地址，必须落在商店站内 —— 清单不能把本体指到别的主机。"
+  ],
+  "id": "example",
+  "name": "示例模块",
+  "summary": "一句话说清它做什么",
+  "icon": "plug",
+  "homepage": "https://github.com/Yumina0789/N1bus-modules",
   "latest": "1.0.0",
   "versions": {
     "1.0.0": {
-      "url": "packages/myext-1.0.0.tar.gz",
-      "sha256": "<不用手填：python3 tools/pack.py myext 会算好并回填>",
-      "size": 0,
+      "url": "packages/example-1.0.0.tar.gz",
+      "sha256": "64 位十六进制",
+      "size": 4096,
       "min_core": "1.0"
     }
   }

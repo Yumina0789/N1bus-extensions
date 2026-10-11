@@ -1,0 +1,18 @@
+# rsc4d 模块内部的 web 服务：状态页 + 把探测请求转给 KMS 容器。
+#
+# 外层（宿主上那个 Caddy）已经用 handle_path /m/rsc4d/* 把前缀剥掉，所以这里
+# 看到的就是 / 与 /healthz —— 页面里的 fetch 也写成相对路径，两边对得上。
+#
+# 为什么不直接反代 rs-c4d 自带的 web：它把链接写成根绝对路径（/status），
+# 在子路径下点开会打到面板自己的路由。
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	# 探测：KMS 端口是否可达（rs-c4d-web 的 /healthz）
+	handle /healthz* {
+		reverse_proxy n1bus-rsc4d:8080
+	}
+
+	file_server
+}

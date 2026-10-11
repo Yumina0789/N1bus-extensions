@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KMS 激活服务</title>
+<!--
+  rsc4d 模块的状态页。单文件、无外部依赖 —— 它被面板以同源 iframe 嵌入，
+  本身不做任何鉴权，也不代表面板。
+
+  探测走相对路径 healthz：外层 Caddy 已经把 /m/rsc4d/ 前缀剥掉，模块自己的
+  web 服务再把它转给 KMS 容器。写绝对路径的话，iframe 里的请求会打到面板本身上。
+-->
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --line:#e3e8f0; --text:#1f2a3a;
+    --dim:#6b7a90; --accent:#2b7fff; --ok:#16b364; --bad:#f04438; --warn:#f79009;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:18px;background:var(--bg);color:var(--text);
+       font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+       "Hiragino Sans GB","Microsoft YaHei",sans-serif}
+  header{margin:0 0 14px}
+  h1{margin:0;font-size:17px;font-weight:650;letter-spacing:.2px}
+  .sub{margin:3px 0 0;color:var(--dim);font-size:12px}
+  h2{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--dim)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(31,42,58,.04)}
+  .row{display:flex;align-items:baseline;gap:12px;padding:5px 0;
+       border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:0}
+  .label{flex:0 0 88px;color:var(--dim);font-size:12px}
+  code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-size:12.5px;background:#eef3fb;border:1px solid var(--line);
+       border-radius:6px;padding:2px 7px}
+  pre{margin:6px 0 12px;padding:10px 12px;background:#f8fafd;border:1px solid var(--line);
+      border-radius:9px;font-size:12px;line-height:1.65;overflow-x:auto;
+      white-space:pre-wrap;word-break:break-all}
+  p{margin:8px 0 2px;font-size:12.5px;color:var(--dim)}
+  ul{margin:6px 0 0;padding-left:18px;color:var(--dim);font-size:12.5px}
+  li{margin:4px 0}
+  .state{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px}
+  .state::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--dim)}
+  .state.ok{color:var(--ok)}   .state.ok::before{background:var(--ok)}
+  .state.bad{color:var(--bad)} .state.bad::before{background:var(--bad)}
+  .state.wait{color:var(--warn)} .state.wait::before{background:var(--warn)}
+</style>
+</head>
+<body>
+  <header>
+    <h1>KMS 激活服务</h1>
+    <p class="sub">rs-c4d · KMS wire 协议 v4 / v5 / v6</p>
+  </header>
+
+  <section class="card">
+    <div class="row"><span class="label">服务状态</span>
+      <span id="state" class="state wait">正在检测…</span></div>
+    <div class="row"><span class="label">KMS 地址</span><code id="host">—</code></div>
+    <div class="row"><span class="label">监听端口</span><span>1688（TCP）</span></div>
+    <div class="row"><span class="label">协议版本</span><span>v4 · v5 · v6</span></div>
+  </section>
+
+  <section class="card">
+    <h2>客户端配置 · Windows</h2>
+    <p>以管理员身份打开命令提示符，依次执行：</p>
+    <pre id="cmdWin">—</pre>
+
+    <h2 style="margin-top:14px">客户端配置 · Office</h2>
+    <p>同样是管理员命令提示符，路径按实际安装版本调整：</p>
+    <pre id="cmdOffice">—</pre>
+  </section>
+
+  <section class="card">
+    <h2>说明</h2>
+    <ul>
+      <li>1688 是裸 TCP 端口，客户端直接连接，不经过任何反向代理。</li>
+      <li>该端口不经过 ufw：Docker 在 NAT 表里直接放行，因此防火墙里没有对应规则，也不表示外部连不上。</li>
+      <li>本服务不附带任何产品密钥，只负责应答客户端的激活请求。</li>
+      <li>激活记录只出现在服务日志里，可在面板的容器日志中查看。</li>
+    </ul>
+  </section>
+
+<script>
+(function(){
+  var host = location.hostname || "localhost";
+  var kms = host + ":1688";
+
+  document.getElementById("host").textContent = kms;
+  document.getElementById("cmdWin").textContent =
+    "slmgr /skms " + kms + "\nslmgr /ato";
+  document.getElementById("cmdOffice").textContent =
+    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /sethst:' + host + "\n" +
+    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /setprt:1688\n' +
+    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /act';
+
+  var el = document.getElementById("state");
+  function probe(){
+    // 相对路径：外层 Caddy 已经把这个前缀交给模块自己的 web 服务
+    fetch("healthz?probe=1", {cache: "no-store"}).then(function(r){
+      if(r.ok){ el.className = "state ok"; el.textContent = "运行中"; }
+      else { el.className = "state bad"; el.textContent = "不可达（HTTP " + r.status + "）"; }
+    }).catch(function(){
+      el.className = "state bad"; el.textContent = "探测失败";
+    });
+  }
+  probe();
+  setInterval(probe, 30000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# rsc4d 模块的容器编排：一个 KMS 服务端 + 一个承载状态页的 web 前端。
+#
+# 约定（本体在动它之前会检查）：
+#   * project 名由本体用 `-p n1bus-rsc4d` 指定，所以这里**不写** name:。
+#   * network 必须是 Caddy 所在的那个 —— 页面由 Caddy 转给 n1bus-rsc4d-web:80，
+#     不在同一个网桥上就找不到容器。
+#
+# 为什么页面要单独一个容器：rs-c4d 自带的 web 把链接写成根绝对路径（/status），
+# 挂在 /m/rsc4d/ 前缀下会打到面板自己的路由上。所以状态页由模块自带，探测请求
+# 用相对路径走同一条前缀。
+#
+# rs-c4d 是**无状态**的：不落库、不写文件，每次请求现算响应，所以没有数据卷。
+
+services:
+  kms:
+    image: ghcr.io/yumina0789/rsc4d:latest
+    container_name: n1bus-rsc4d
+    hostname: rsc4d
+    restart: unless-stopped
+    ports:
+      - "1688:1688"          # 给客户端用的裸 TCP，不经反代
+    environment:
+      - TZ=Asia/Shanghai
+      - WEB_PORT=8080        # 镜像里 rs-c4d-web 的监听端口（状态页数据源）
+      - KMS_PIDS=256
+      # 逐请求日志是唯一的观测来源，关掉就只剩一个空壳
+      - KMS_VERBOSE=1
+    # 日志是排障与统计的唯一凭据，留够但别把磁盘吃掉
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - n1bus
+
+  web:
+    image: caddy:2-alpine
+    container_name: n1bus-rsc4d-web
+    hostname: web
+    restart: unless-stopped
+    depends_on:
+      - kms
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web:/srv:ro
+    networks:
+      - n1bus
+
+networks:
+  n1bus:
+    external: true
+    name: docker_default

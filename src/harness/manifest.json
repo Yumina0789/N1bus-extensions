@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "id": "harness",
+  "name": "DeepSeek Harness",
+  "version": "1.0.0",
+  "summary": "容器里的 agent 工作台；入口用一次性 token 换取会话",
+  "icon": "plug",
+  "homepage": "https://github.com/deepseek-ai/dsh",
+
+  "compose": {
+    "file": "compose.yml",
+    "project": "n1bus-harness"
+  },
+
+  "page": {
+    "kind": "iframe",
+    "title": "DeepSeek Harness",
+    "url": "/m/harness/",
+    "upstream": "n1bus-harness:3081",
+    "entry": {
+      "type": "container-log-token",
+      "container": "n1bus-harness"
+    }
+  }
+}

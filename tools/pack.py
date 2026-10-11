@@ -24,9 +24,26 @@ SRC = ROOT / "src"
 PKG = ROOT / "packages"
 INDEX = ROOT / "index.json"
 
-# 打进包里的东西：manifest 必须有，compose 可选，其余一律不要
-ALLOW = ("manifest.json", "compose.yml")
+# 打进包里的东西：src/<id>/ 下的所有文件，相对路径就是包内路径，只排除编辑器与
+# 备份留下的垃圾。早先这里写死成 manifest.json + compose.yml 两个名字 —— 模块页面
+# 改成自带 iframe 页之后，包内还要能放页面和它自己的配置，白名单只会碍事。
+SKIP_SUFFIX = (".bak", ".swp", ".swo", ".orig", "~")
 MANIFEST_REQUIRED = ("schema", "id", "name", "version", "summary")
+
+
+def collect(src):
+    """列出该进包的文件（相对 src 的路径），按名字排序。"""
+    out = []
+    for p in sorted(src.rglob("*")):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(src)
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        if str(rel).endswith(SKIP_SUFFIX):
+            continue
+        out.append(rel)
+    return out
 
 
 def die(msg):
@@ -54,13 +71,14 @@ def main():
         die("manifest.json 的 id（%s）与目录名（%s）不一致" % (man["id"], mid))
 
     version = man["version"]
-    files = [f for f in ALLOW if (src / f).is_file()]
-    if "manifest.json" not in files:
-        die("包里没有 manifest.json")
+    files = collect(src)
+    names = [str(f).replace(os.sep, "/") for f in files]
+    if "manifest.json" not in names:
+        die("包里没有 manifest.json（它必须位于模块根）")
     # compose 字段声明了就必须带上对应文件
     if man.get("compose") and man["compose"].get("file"):
         want = man["compose"]["file"]
-        if want not in files:
+        if want not in names:
             die("manifest 声明了 compose.file=%s，但 src/%s/ 里没有这个文件" % (want, mid))
 
     PKG.mkdir(exist_ok=True)
@@ -73,8 +91,9 @@ def main():
     buf = io.BytesIO()
     with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0, compresslevel=9) as gz:
         with tarfile.open(fileobj=gz, mode="w") as tf:
-            for name in sorted(files):
-                p = src / name
+            for rel in files:
+                p = src / rel
+                name = str(rel).replace(os.sep, "/")
                 info = tf.gettarinfo(str(p), arcname=name)
                 info.mtime = 0
                 info.uid = info.gid = 0
@@ -117,7 +136,7 @@ def main():
     INDEX.write_text(json.dumps(idx, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print("已打包 %s" % out.relative_to(ROOT))
-    print("  含文件  %s" % ", ".join(files))
+    print("  含文件  %s" % ", ".join(names))
     print("  sha256  %s" % sha)
     print("  size    %d" % size)
     print("  index   %s v%s 已回填" % (mid, version))

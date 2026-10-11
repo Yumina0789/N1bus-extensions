@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "rsc4d",
+  "name": "KMS 激活服务",
+  "version": "1.0.0",
+  "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），自带一个状态页",
+  "icon": "key",
+  "homepage": "https://github.com/Yumina0789/RSC4D",
+
+  "compose": {
+    "file": "compose.yml",
+    "project": "n1bus-rsc4d"
+  },
+
+  "ports": [
+    {"port": 1688, "proto": "tcp", "expose": true,
+     "note": "KMS 客户端：裸 TCP，不经反向代理，且 docker-proxy 绕过 ufw"}
+  ],
+
+  "page": {
+    "kind": "iframe",
+    "title": "KMS 激活服务",
+    "url": "/m/rsc4d/",
+    "upstream": "n1bus-rsc4d-web:80"
+  }
+}

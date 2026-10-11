@@ -1,0 +1,48 @@
+# harness 模块的容器编排。
+#
+# 约定（本体在动它之前会检查）：
+#   * project 名由本体用 `-p n1bus-harness` 指定，所以这里**不写** name:。
+#   * network 必须是 Caddy 所在的那个 —— 容器不 publish 端口，只有同一网桥上的
+#     Caddy 够得到它。
+#
+# 端口为什么是 3081 而不是 3080：这个镜像里的 dsh 只肯绑 127.0.0.1，容器内另有
+# 一个 node TCP 转发进程把 0.0.0.0:3081 转进去，所以对外要连转发口。
+#
+# 入口地址是**动态**的：dsh 启动时生成一次性 token，打印在容器日志里、不落盘，
+# 没有 token 时一律 401。manifest 的 page.entry 声明了这件事，面板会读日志取 token
+# 再拼出入口地址 —— 所以这里的 DSH_PUBLIC_URL 必须与 page.url 一致。
+
+services:
+  dsh:
+    image: dsh:local
+    container_name: n1bus-harness
+    hostname: dsh
+    init: true                 # 收僵尸进程：agent 会开不少子进程
+    restart: unless-stopped
+    # 宿主内存有限，给个上限别把面板挤死；超了让它自己 OOM 重启
+    mem_limit: 900m
+    environment:
+      - TZ=Asia/Shanghai
+      - DSH_HOME=/root/.dsh
+      # Host / Origin 栅栏要放行的 authority（必须与浏览器地址栏一致）
+      - DSH_TRUSTED_HOST=lolicon.fans
+      # 浏览器实际访问的根。换了挂载路径就要跟着改，并且与本模块 page.url 一致。
+      - DSH_PUBLIC_URL=https://lolicon.fans/m/harness/
+      # 模型密钥不放这里：面板会把这个目录的内容按包哈希校验，密钥应当通过 dsh
+      # 自己的「设置 → 模型」填写，存在 dsh-home 卷里。
+    volumes:
+      - dsh-home:/root/.dsh       # 配置、会话、凭据：容器重建也不丢
+      - ./workspace:/workspace    # agent 的工作区
+    networks:
+      - nimbus
+
+networks:
+  nimbus:
+    external: true
+    name: docker_default
+
+volumes:
+  # 名字写死（不是 external）：卷不存在时 compose 会自动建，而之前手工部署留下的
+  # 同名卷会被直接复用 —— 会话与配置不会因为换成模块管理而丢失。
+  dsh-home:
+    name: dsh_dsh-home

@@ -1,20 +1,35 @@
 {
   "schema": 1,
-  "registry": "Yumina0789/N1bus-extensions",
-  "extensions": [],
+  "registry": "Yumina0789/N1bus-modules",
   "modules": [
     {
-      "id": "kms",
+      "id": "rsc4d",
       "name": "KMS 激活服务",
-      "summary": "rs-c4d：KMS wire 协议服务端（v4/v5/v6），一个静态二进制",
+      "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），自带一个状态页",
       "icon": "key",
       "homepage": "https://github.com/Yumina0789/RSC4D",
       "latest": "1.0.0",
       "versions": {
         "1.0.0": {
-          "url": "packages/kms-1.0.0.tar.gz",
-          "sha256": "49c503b6403addebecb677a645b025a7ea642f3dad76a4cc03a186eb532027d1",
-          "size": 1585,
+          "url": "packages/rsc4d-1.0.0.tar.gz",
+          "sha256": "97b4c4af774c64cadf1ff69886c264feea6bc40aafbb59911b913eb9dde09e46",
+          "size": 4073,
+          "min_core": "1.0"
+        }
+      }
+    },
+    {
+      "id": "harness",
+      "name": "DeepSeek Harness",
+      "summary": "容器里的 agent 工作台；入口用一次性 token 换取会话",
+      "icon": "plug",
+      "homepage": "https://github.com/deepseek-ai/dsh",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "url": "packages/harness-1.0.0.tar.gz",
+          "sha256": "4fbbdd75a83c95913ad98c88b40b7f6466b1869cc30504ad97c3bbce8af78ebb",
+          "size": 1743,
           "min_core": "1.0"
         }
       }

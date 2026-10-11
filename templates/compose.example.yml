@@ -1,27 +1,33 @@
-# 模块包的 compose.yml 示例。
+# 模块容器的编排模板。要点：
 #
-# 约定（本体在动它之前会检查）：
-#   * project 名必须是 n1bus-<id>，由本体在执行 module.* 动作时用 -p 指定，
-#     本文件里不要写 name:（会被命令行覆盖，写了反而让人误会）。
-#   * container_name 要与 manifest.json 里 log / aggregate 块的 source.container 一致。
-#   * 数据卷用**具名卷**，卸载时才可能连数据一起清（卸载本轮还没做）。
-#   * 端口绑定写 127.0.0.1，除非它本来就是给外网用的裸 TCP 服务（如 KMS 的 1688）。
-#   * 日志给个上限：本体要读它，但别让它把磁盘吃掉。
+#   1. project 名由本体用 `-p n1bus-<id>` 指定，这里**不要**写 name:。
+#   2. network 必须是 Caddy 所在的那个 —— 模块页面由 Caddy 转给容器，不挂同一个
+#      网桥就找不到它。模块不需要页面时这一条可以省略。
+#   3. 只写 image + container_name，**不要 build**：包内没有构建上下文，
+#      而本体也不执行模块提供的任何命令（ADR 0002）。
+#
+#   cd src/<id> && python3 ../../tools/pack.py <id>
 
 services:
   app:
-    image: ghcr.io/yumina0789/myext:latest
-    container_name: n1bus-myext-app
+    image: ghcr.io/example/app:latest
+    container_name: n1bus-example
+    hostname: app
     restart: unless-stopped
+    # container_name 要与 manifest 的 page.upstream / page.entry.container 对上
     ports:
-      - "127.0.0.1:9000:9000"
-    volumes:
-      - myext-data:/var/lib/myext
+      - "127.0.0.1:8080:8080"   # 只给 Caddy 用就不要 publish
+    environment:
+      - TZ=Asia/Shanghai
     logging:
       driver: json-file
       options:
         max-size: "10m"
-        max-file: "5"
+        max-file: "3"
+    networks:
+      - n1bus
 
-volumes:
-  myext-data:
+networks:
+  n1bus:
+    external: true
+    name: docker_default
