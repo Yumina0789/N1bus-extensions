@@ -28,7 +28,9 @@ frontend kms_in
 
 	stick-table type ip size 100k expire @BAN_TIME@s store conn_cnt
 	tcp-request connection track-sc0 src
-	tcp-request connection reject if { sc0_conn_cnt(0) gt @RATE_LIMIT@ }
+	# 注意是 sc0_conn_cnt 而不是 sc0_conn_cnt(0)：带下表的关键字本身就已经指定了
+	# tracker，再给个括号会被当成「第几个 table」而报 unable to find table '0'。
+	tcp-request connection reject if { sc0_conn_cnt gt @RATE_LIMIT@ }
 
 	default_backend kms_srv
 
