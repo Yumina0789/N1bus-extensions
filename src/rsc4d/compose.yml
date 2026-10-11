@@ -13,7 +13,10 @@
 
 services:
   kms:
-    image: ghcr.io/yumina0789/rsc4d:latest
+    # 镜像名可用 .env 里的 RSC4D_IMAGE 覆盖（compose 会自动读同目录的 .env）。
+    # 默认值指向本机镜像：rs-c4d 的镜像目前**没有**发布到任何公开 registry，
+    # 目标机器上需要先有它（见 README「现有模块」一节）。
+    image: ${RSC4D_IMAGE:-rs-c4d:local}
     container_name: n1bus-rsc4d
     hostname: rsc4d
     restart: unless-stopped

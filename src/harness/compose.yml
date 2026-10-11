@@ -14,7 +14,9 @@
 
 services:
   dsh:
-    image: dsh:local
+    # 镜像名可用同目录 .env 里的 DSH_IMAGE 覆盖。默认指向本机镜像：
+    # dsh 由本机构建，没有发布到任何公开 registry（见 README「现有模块」）。
+    image: ${DSH_IMAGE:-dsh:local}
     container_name: n1bus-harness
     hostname: dsh
     init: true                 # 收僵尸进程：agent 会开不少子进程

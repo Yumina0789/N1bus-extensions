@@ -8,12 +8,12 @@
       "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），自带一个状态页",
       "icon": "key",
       "homepage": "https://github.com/Yumina0789/RSC4D",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
-        "1.0.0": {
-          "url": "packages/rsc4d-1.0.0.tar.gz",
-          "sha256": "97b4c4af774c64cadf1ff69886c264feea6bc40aafbb59911b913eb9dde09e46",
-          "size": 4073,
+        "1.0.1": {
+          "url": "packages/rsc4d-1.0.1.tar.gz",
+          "sha256": "787648e1521f297b9a20a661430a3f965c307a46a32a2ebc0d2b02c8d6f54756",
+          "size": 4243,
           "min_core": "1.0"
         }
       }
@@ -24,12 +24,12 @@
       "summary": "容器里的 agent 工作台；入口用一次性 token 换取会话",
       "icon": "plug",
       "homepage": "https://github.com/deepseek-ai/dsh",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
-        "1.0.0": {
-          "url": "packages/harness-1.0.0.tar.gz",
-          "sha256": "4fbbdd75a83c95913ad98c88b40b7f6466b1869cc30504ad97c3bbce8af78ebb",
-          "size": 1743,
+        "1.0.1": {
+          "url": "packages/harness-1.0.1.tar.gz",
+          "sha256": "d834477ea7f8c1d0c70998e3890e31384cb7765c17d8405d2cd5ab1832cde207",
+          "size": 1872,
           "min_core": "1.0"
         }
       }

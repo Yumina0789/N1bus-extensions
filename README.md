@@ -129,6 +129,14 @@ python3 tools/pack.py myext
 | `rsc4d` | [RSC4D](https://github.com/Yumina0789/RSC4D)：KMS wire 协议服务端 v4 / v5 / v6，静态二进制 | 状态页（实时探测 KMS 可达性 + 客户端配置命令） |
 | `harness` | DeepSeek Harness：容器里的 agent 工作台 | dsh 自己的界面，入口用一次性 token 换取会话 |
 
-`rsc4d` 的镜像是 `ghcr.io/yumina0789/rsc4d:latest`（公开）。
-`harness` 的镜像是 `dsh:local`，**需要目标机器上已有该镜像** —— 它由本机自行构建，
-不在任何公开 registry 里。
+`rsc4d` 与 `harness` 的镜像都**没有发布到任何公开 registry**，安装前目标机器上需要先有它：
+
+| 模块 | 默认镜像 | 来源 |
+|---|---|---|
+| `rsc4d` | `rs-c4d:local` | [RSC4D](https://github.com/Yumina0789/RSC4D) 项目自行构建（同时暴露 1688 与 8080） |
+| `harness` | `dsh:local` | 本机的 DeepSeek Harness 镜像 |
+
+两处 `image:` 都写成了 `${VAR:-默认值}`，可以用模块目录下的 `.env` 覆盖
+（compose 会自动读同目录的 `.env`）：`RSC4D_IMAGE=...`、`DSH_IMAGE=...`。
+换成任何可拉取的地址都能用。
+
