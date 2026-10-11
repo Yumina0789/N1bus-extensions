@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "rsc4d",
   "name": "KMS 激活服务",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），带状态页与按来源的连接限流",
   "icon": "key",
   "homepage": "https://github.com/Yumina0789/RSC4D",
@@ -24,7 +24,8 @@
       "type": "text",
       "default": "",
       "placeholder": "kms.example.com",
-      "help": "只影响状态页里那两条客户端命令。留空则用打开面板的域名。DNS 记录要自己加。"
+      "apply": "file",
+      "help": "只影响状态页里那两条客户端命令，页面当场就能读到新值 —— 改它不会重启任何容器。留空则用打开面板的域名。DNS 记录要自己加。"
     },
     {
       "key": "KMS_RATE_LIMIT",

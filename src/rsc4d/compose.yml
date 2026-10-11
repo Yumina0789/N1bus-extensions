@@ -77,8 +77,10 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./web:/srv:ro
-      # 面板写下的配置（域名、限流参数）。本体保证这个文件存在，所以是单文件挂载。
-      # 状态页据此显示客户端命令，而不是猜一个域名出来。
+      # 面板写下的配置（域名、限流参数）。本体保证这个文件存在，所以是单文件挂载：
+      # 文件不存在时 Docker 会替你建一个同名**目录**，此后面板再也写不进去。
+      # 另注意单文件挂载认的是宿主上那个 inode —— 本体是**原地改写**它（不是写临时
+      # 文件再 rename），所以容器按请求读就能拿到新值，改 KMS_DOMAIN 不需要重建容器。
       - ./config.json:/cfg/config.json:ro
     networks:
       - n1bus

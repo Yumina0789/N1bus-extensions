@@ -118,6 +118,7 @@ python3 tools/pack.py myext
 | `page.url` 是 `/` 开头的站内路径 | 它会被原样写进 Caddy 配置，字符集卡得很紧 |
 | `page.upstream` 是 `host:port` | 同上 |
 | `page.entry.container` 是合法容器名 | 会作为 `docker logs` 的一个参数 |
+| `config[].apply` 是 `restart` / `file` | 它决定保存之后**要不要动容器**；不认识的值会被拒，而缺省是 `restart`（老 manifest 行为不变） |
 | `icon` 是面板**已有**图标集里的名字 | 不加载外部 SVG |
 
 ---
@@ -139,4 +140,7 @@ python3 tools/pack.py myext
 两处 `image:` 都写成了 `${VAR:-默认值}`，可以用模块目录下的 `.env` 覆盖
 （compose 会自动读同目录的 `.env`）：`RSC4D_IMAGE=...`、`DSH_IMAGE=...`。
 换成任何可拉取的地址都能用。
+
+面板的「模块设置」保存时**只覆盖模块自己在 `config` 里声明过的键**，
+手工加的这两行会原样留在 `.env` 里，不会被冲掉。
 
