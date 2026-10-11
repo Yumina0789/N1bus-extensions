@@ -48,12 +48,18 @@
       "summary": "容器里的 agent 工作台；入口用一次性 token 换取会话",
       "icon": "plug",
       "homepage": "https://github.com/deepseek-ai/dsh",
-      "latest": "1.0.1",
+      "latest": "1.0.2",
       "versions": {
         "1.0.1": {
           "url": "packages/harness-1.0.1.tar.gz",
           "sha256": "d834477ea7f8c1d0c70998e3890e31384cb7765c17d8405d2cd5ab1832cde207",
           "size": 1872,
+          "min_core": "1.0"
+        },
+        "1.0.2": {
+          "url": "packages/harness-1.0.2.tar.gz",
+          "sha256": "2fbd07fc16c4df89d50d51fceb31a784eacd103e57cf34e4006028cdd1791de3",
+          "size": 2573,
           "min_core": "1.0"
         }
       }

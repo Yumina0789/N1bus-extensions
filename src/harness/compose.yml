@@ -30,6 +30,23 @@ services:
       - DSH_TRUSTED_HOST=lolicon.fans
       # 浏览器实际访问的根。换了挂载路径就要跟着改，并且与本模块 page.url 一致。
       - DSH_PUBLIC_URL=https://lolicon.fans/m/harness/
+      # 关掉 dsh 的内层文件沙箱。容器自己就是隔离边界，而容器里**没有任何可用的
+      # 沙箱后端**：镜像里没有 bubblewrap，Docker 默认 seccomp 又挡住
+      # clone(CLONE_NEWUSER)（unshare --user 直接 EPERM）。默认的 workspace-write
+      # 于是每次工具调用都落在 dsh-sandbox 那句
+      #   "no sandbox backend is usable on this host; refusing to run the command unconfined"
+      # 上 —— 表现为「调什么工具都失败」。dsh 官方给这种情况的指引就是改用
+      # danger-full-access（见 @deepseek-ai/dsh-sandbox 的报错文案）。
+      #
+      # 必须用这个环境变量，而**不要**去 patch 里单独改 sandbox-policy.mode：
+      # dsh-base 用同一个变量同时推导 sandbox 与 approval
+      #   mode:   process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
+      #   policy: (同上) === 'danger-full-access' ? 'never' : 'ask'
+      # 只改其中一个，permission 插件会因为 (sandbox, approval) 组合落不进任何预设
+      # 而整个拒绝激活，报 "composed sandbox and approval defaults match no preset"。
+      # 边界仍在：容器不 publish 端口、无 CAP_SYS_ADMIN、mem_limit 900m，
+      # 且只挂载 dsh-home 卷与本模块的 workspace。
+      - DSH_PERMISSION_MODE=danger-full-access
       # 模型密钥不放这里：面板会把这个目录的内容按包哈希校验，密钥应当通过 dsh
       # 自己的「设置 → 模型」填写，存在 dsh-home 卷里。
     volumes:

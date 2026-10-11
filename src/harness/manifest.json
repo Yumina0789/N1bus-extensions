@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "harness",
   "name": "DeepSeek Harness",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "summary": "容器里的 agent 工作台；入口用一次性 token 换取会话",
   "icon": "plug",
   "homepage": "https://github.com/deepseek-ai/dsh",
