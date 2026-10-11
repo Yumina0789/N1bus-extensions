@@ -1,33 +1,27 @@
-# 扩展包的 compose.yml 示例。
+# 模块包的 compose.yml 示例。
 #
-# 约定（面板会检查）：
-#   * project 名必须是 n1bus-<id>，由面板在执行 ext.* 动作时用 -p 指定，
+# 约定（本体在动它之前会检查）：
+#   * project 名必须是 n1bus-<id>，由本体在执行 module.* 动作时用 -p 指定，
 #     本文件里不要写 name:（会被命令行覆盖，写了反而让人误会）。
-#   * 数据卷用**具名卷**，面板卸载时才可能连数据一起清（本轮不做卸载）。
-#   * 端口绑定写 127.0.0.1，除非它本来就是给公网用的裸 TCP 服务（如 KMS 的 1688）。
-#   * 与本栈之外的东西通信，接既有外部网络，别自己新建网桥。
+#   * container_name 要与 manifest.json 里 log / aggregate 块的 source.container 一致。
+#   * 数据卷用**具名卷**，卸载时才可能连数据一起清（卸载本轮还没做）。
+#   * 端口绑定写 127.0.0.1，除非它本来就是给外网用的裸 TCP 服务（如 KMS 的 1688）。
+#   * 日志给个上限：本体要读它，但别让它把磁盘吃掉。
 
 services:
-  vlmcsd:
-    image: ghcr.io/yumina0789/vlmcsd:latest
-    container_name: n1bus-kms-vlmcsd
+  app:
+    image: ghcr.io/yumina0789/myext:latest
+    container_name: n1bus-myext-app
     restart: unless-stopped
     ports:
-      - "1688:1688"            # KMS 客户端：公网可达，且 docker-proxy 绕过 ufw
+      - "127.0.0.1:9000:9000"
     volumes:
-      - kms-data:/var/lib/nimbus
-    command: ["-l", "/var/log/vlmcsd.log"]
-
-  v1m-dash:
-    image: n1bus-kms-dash:local
-    container_name: n1bus-kms-dash
-    restart: unless-stopped
-    depends_on:
-      - vlmcsd
-    ports:
-      - "127.0.0.1:8099:8099"  # 只给宿主：面板从这里读它的 API
-    volumes:
-      - kms-data:/var/lib/nimbus
+      - myext-data:/var/lib/myext
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
-  kms-data:
+  myext-data:

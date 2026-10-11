@@ -1,5 +1,23 @@
 {
   "schema": 1,
   "registry": "Yumina0789/N1bus-extensions",
-  "extensions": []
+  "extensions": [],
+  "modules": [
+    {
+      "id": "kms",
+      "name": "KMS 激活服务",
+      "summary": "rs-c4d：KMS wire 协议服务端（v4/v5/v6），一个静态二进制",
+      "icon": "key",
+      "homepage": "https://github.com/Yumina0789/RSC4D",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "url": "packages/kms-1.0.0.tar.gz",
+          "sha256": "49c503b6403addebecb677a645b025a7ea642f3dad76a4cc03a186eb532027d1",
+          "size": 1585,
+          "min_core": "1.0"
+        }
+      }
+    }
+  ]
 }

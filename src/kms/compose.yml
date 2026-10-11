@@ -1,0 +1,25 @@
+# kms 模块的容器编排。
+#
+# 约定（本体在动它之前会检查）：
+#   * project 名由本体用 `-p n1bus-kms` 指定，所以这里**不写** name:。
+#   * 容器名要跟 manifest.json 里 aggregate/log 块的 source.container 对上。
+#   * 端口 1688 是 KMS 标准端口，给客户端用的裸 TCP —— 不经反代，且 docker-proxy
+#     会绕过 ufw，所以「ufw 里没有这条规则」不等于外面连不上。
+#
+# rs-c4d 是**无状态**的：不落库、不写文件，每次请求现算响应。所以没有数据卷。
+# 唯一的观测来源就是它的 stdout/stderr 日志（--verbose 已经在镜像入口里带上）。
+
+services:
+  rsc4d:
+    image: ghcr.io/yumina0789/rsc4d:latest
+    container_name: n1bus-kms-rsc4d
+    restart: unless-stopped
+    ports:
+      - "1688:1688"
+    # 统计是从日志里聚合出来的（见 manifest.json 的 aggregate 块），所以日志要留够；
+    # 但别让它把磁盘吃掉 —— 10 MB × 5 份，够回溯几千次激活。
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

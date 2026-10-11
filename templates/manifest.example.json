@@ -1,44 +1,39 @@
 {
   "schema": 1,
-  "id": "kms",
-  "name": "KMS 激活服务",
+  "id": "myext",
+  "name": "我的模块",
   "version": "1.0.0",
-  "summary": "vlmcsd + 管理面板，为 Windows / Office 提供 KMS 激活",
+  "summary": "一句话说明它是干什么的（商店列表里显示这一句）",
   "icon": "key",
-  "homepage": "https://github.com/Yumina0789/V1mc4d",
+  "homepage": "https://github.com/Yumina0789/myext",
 
   "compose": {
     "file": "compose.yml",
-    "project": "n1bus-kms",
-    "services": ["vlmcsd", "v1m-dash"]
+    "project": "n1bus-myext",
+    "services": ["app"]
   },
 
   "ports": [
-    {"port": 1688, "proto": "tcp", "expose": true,  "note": "KMS 客户端（裸 TCP，不经反代）"},
-    {"port": 8099, "proto": "tcp", "expose": false, "note": "管理 API，仅回环"}
+    {"port": 9000, "proto": "tcp", "expose": false, "note": "只给本体读的 API"}
   ],
 
   "api": {
-    "upstream": "http://127.0.0.1:8099",
-    "token_file": "/var/lib/n1bus/extensions/kms/token",
+    "upstream": "http://127.0.0.1:9000",
     "writes": {
-      "service":         ["/api/service",        ["action"]],
-      "config_rollback": ["/api/config/rollback", []],
-      "unban":           ["/api/limits/unban",   ["ip"]],
-      "stats_prune":     ["/api/stats/prune",    []],
-      "stats_clear":     ["/api/stats/clear",    ["confirm"]]
+      "restart_service": ["/api/service", ["action"]]
     }
   },
 
   "page": {
-    "kind": "both",
-    "title": "KMS",
+    "kind": "declared",
+    "title": "我的模块",
     "sections": [
-      {"type": "status",  "label": "服务状态", "from": "service"},
-      {"type": "kv",      "label": "激活统计", "from": "stats"},
-      {"type": "table",   "label": "最近激活", "from": "recent"},
-      {"type": "actions", "items": ["ext.start", "ext.stop", "ext.restart"]}
-    ],
-    "iframe": {"label": "工作台", "path": "/dsh/"}
+      {"type": "status", "label": "服务状态"},
+      {"type": "actions", "items": ["module.start", "module.stop", "module.restart"]},
+      {"type": "kv", "label": "概况", "from": "summary"},
+      {"type": "table", "label": "明细", "from": "items"},
+      {"type": "log", "label": "日志",
+       "source": {"kind": "container-log", "container": "n1bus-myext-app", "tail": 200}}
+    ]
   }
 }
