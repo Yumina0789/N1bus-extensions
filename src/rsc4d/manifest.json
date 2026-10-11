@@ -2,8 +2,8 @@
   "schema": 1,
   "id": "rsc4d",
   "name": "KMS 激活服务",
-  "version": "1.0.1",
-  "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），自带一个状态页",
+  "version": "1.1.0",
+  "summary": "rs-c4d：KMS wire 协议服务端（v4 / v5 / v6），带状态页与按来源的连接限流",
   "icon": "key",
   "homepage": "https://github.com/Yumina0789/RSC4D",
 
@@ -14,7 +14,52 @@
 
   "ports": [
     {"port": 1688, "proto": "tcp", "expose": true,
-     "note": "KMS 客户端：裸 TCP，不经反向代理，且 docker-proxy 绕过 ufw"}
+     "note": "KMS 客户端：裸 TCP，经限流层进入 KMS 容器；docker-proxy 绕过 ufw"}
+  ],
+
+  "config": [
+    {
+      "key": "KMS_DOMAIN",
+      "label": "对外域名",
+      "type": "text",
+      "default": "",
+      "placeholder": "kms.example.com",
+      "help": "只影响状态页里那两条客户端命令。留空则用打开面板的域名。DNS 记录要自己加。"
+    },
+    {
+      "key": "KMS_RATE_LIMIT",
+      "label": "每来源连接数上限",
+      "type": "number",
+      "default": 60,
+      "min": 1,
+      "max": 100000,
+      "help": "同一来源在「拒绝时长」内最多发起多少次连接，超出即丢弃。设成很大的值等于不限流。"
+    },
+    {
+      "key": "KMS_BAN_TIME",
+      "label": "拒绝时长（秒）",
+      "type": "number",
+      "default": 600,
+      "min": 10,
+      "max": 86400,
+      "help": "超限后拒绝多久；也是统计窗口。这个来源停止尝试满这么久就自动恢复。"
+    },
+    {
+      "key": "KMS_PIDS",
+      "label": "并发连接上限",
+      "type": "number",
+      "default": 256,
+      "min": 8,
+      "max": 4096,
+      "help": "KMS 服务端同时处理的连接数。它是全局的，与上面的按来源限流是两回事。"
+    },
+    {
+      "key": "KMS_STRICT_PRODUCTS",
+      "label": "拒绝未知产品",
+      "type": "bool",
+      "default": "0",
+      "help": "打开后，客户端报的 KMSID 不在服务端已知列表里就直接拒绝；关闭则回退到第一条 CSVLK。"
+    }
   ],
 
   "page": {

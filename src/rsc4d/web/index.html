@@ -10,6 +10,9 @@
 
   探测走相对路径 healthz：外层 Caddy 已经把 /m/rsc4d/ 前缀剥掉，模块自己的
   web 服务再把它转给 KMS 容器。写绝对路径的话，iframe 里的请求会打到面板本身上。
+
+  域名与限流参数来自同目录的 config.json（面板的「模块设置」写下的那份），
+  拿不到就退回当前访问的域名 —— 绝不猜一个不存在的域名印在配置命令里。
 -->
 <style>
   :root{
@@ -29,7 +32,7 @@
   .row{display:flex;align-items:baseline;gap:12px;padding:5px 0;
        border-bottom:1px dashed var(--line)}
   .row:last-child{border-bottom:0}
-  .label{flex:0 0 88px;color:var(--dim);font-size:12px}
+  .label{flex:0 0 106px;color:var(--dim);font-size:12px}
   code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   code{font-size:12.5px;background:#eef3fb;border:1px solid var(--line);
        border-radius:6px;padding:2px 7px}
@@ -44,6 +47,7 @@
   .state.ok{color:var(--ok)}   .state.ok::before{background:var(--ok)}
   .state.bad{color:var(--bad)} .state.bad::before{background:var(--bad)}
   .state.wait{color:var(--warn)} .state.wait::before{background:var(--warn)}
+  .off{color:var(--dim)}
 </style>
 </head>
 <body>
@@ -57,6 +61,7 @@
       <span id="state" class="state wait">正在检测…</span></div>
     <div class="row"><span class="label">KMS 地址</span><code id="host">—</code></div>
     <div class="row"><span class="label">监听端口</span><span>1688（TCP）</span></div>
+    <div class="row"><span class="label">来源限流</span><span id="rate">—</span></div>
     <div class="row"><span class="label">协议版本</span><span>v4 · v5 · v6</span></div>
   </section>
 
@@ -73,7 +78,8 @@
   <section class="card">
     <h2>说明</h2>
     <ul>
-      <li>1688 是裸 TCP 端口，客户端直接连接，不经过任何反向代理。</li>
+      <li>1688 是裸 TCP 端口，客户端直接连接，不经过任何 TLS 或 HTTP 反向代理。</li>
+      <li>连接先经过一层限流再进入 KMS 服务端：同一个来源超出配额会被暂时丢弃，停止尝试后自动恢复；限流不写宿主防火墙规则。</li>
       <li>该端口不经过 ufw：Docker 在 NAT 表里直接放行，因此防火墙里没有对应规则，也不表示外部连不上。</li>
       <li>本服务不附带任何产品密钥，只负责应答客户端的激活请求。</li>
       <li>激活记录只出现在服务日志里，可在面板的容器日志中查看。</li>
@@ -82,25 +88,44 @@
 
 <script>
 (function(){
-  var host = location.hostname || "localhost";
-  var kms = host + ":1688";
+  var elState = document.getElementById("state");
+  var elHost  = document.getElementById("host");
+  var elRate  = document.getElementById("rate");
+  var elWin   = document.getElementById("cmdWin");
+  var elOff   = document.getElementById("cmdOffice");
+  var PORT    = 1688;
 
-  document.getElementById("host").textContent = kms;
-  document.getElementById("cmdWin").textContent =
-    "slmgr /skms " + kms + "\nslmgr /ato";
-  document.getElementById("cmdOffice").textContent =
-    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /sethst:' + host + "\n" +
-    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /setprt:1688\n' +
-    'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /act';
+  function paint(host, cfg){
+    var kms = host + ":" + PORT;
+    elHost.textContent = kms;
+    elWin.textContent = "slmgr /skms " + kms + "\nslmgr /ato";
+    elOff.textContent =
+      'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /sethst:' + host + "\n" +
+      'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /setprt:' + PORT + "\n" +
+      'cscript "C:\\Program Files\\Microsoft Office\\Office16\\ospp.vbs" /act';
+    elRate.textContent = cfg
+      ? ("每个来源 " + cfg.KMS_BAN_TIME + " 秒内最多 " + cfg.KMS_RATE_LIMIT + " 次连接")
+      : "读取不到限流参数";
+    if(!cfg) elRate.className = "off";
+  }
 
-  var el = document.getElementById("state");
+  // 先用当前域名画一遍，拿到配置再按配置里的域名覆盖
+  paint(location.hostname || "localhost", null);
+
+  fetch("config.json", {cache: "no-store"}).then(function(r){
+    return r.ok ? r.json() : null;
+  }).then(function(cfg){
+    if(!cfg) return;
+    var host = (cfg.KMS_DOMAIN || "").trim() || location.hostname || "localhost";
+    paint(host, cfg);
+  }).catch(function(){ /* 读不到就沿用当前域名，页面上那行会显示读取失败 */ });
+
   function probe(){
-    // 相对路径：外层 Caddy 已经把这个前缀交给模块自己的 web 服务
     fetch("healthz?probe=1", {cache: "no-store"}).then(function(r){
-      if(r.ok){ el.className = "state ok"; el.textContent = "运行中"; }
-      else { el.className = "state bad"; el.textContent = "不可达（HTTP " + r.status + "）"; }
+      if(r.ok){ elState.className = "state ok"; elState.textContent = "运行中"; }
+      else { elState.className = "state bad"; elState.textContent = "不可达（HTTP " + r.status + "）"; }
     }).catch(function(){
-      el.className = "state bad"; el.textContent = "探测失败";
+      elState.className = "state bad"; elState.textContent = "探测失败";
     });
   }
   probe();

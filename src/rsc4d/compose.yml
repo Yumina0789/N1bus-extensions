@@ -1,15 +1,17 @@
-# rsc4d 模块的容器编排：一个 KMS 服务端 + 一个承载状态页的 web 前端。
+# rsc4d 模块的容器编排：KMS 服务端 + 限流层 + 状态页。
+#
+#   KMS 客户端 ──▶ limiter:1688 ──▶ kms:1688（容器内）
+#                      │
+#                      └─ 每个来源 IP 一张计数表，超限即丢弃
 #
 # 约定（本体在动它之前会检查）：
 #   * project 名由本体用 `-p n1bus-rsc4d` 指定，所以这里**不写** name:。
-#   * network 必须是 Caddy 所在的那个 —— 页面由 Caddy 转给 n1bus-rsc4d-web:80，
-#     不在同一个网桥上就找不到容器。
+#   * network 必须是 Caddy 所在的那个 —— 页面由 Caddy 转给 n1bus-rsc4d-web:80。
+#   * 所有 `${...}` 的值由本体写在同目录的 .env 里（模块页的「模块设置」）。
 #
-# 为什么页面要单独一个容器：rs-c4d 自带的 web 把链接写成根绝对路径（/status），
-# 挂在 /m/rsc4d/ 前缀下会打到面板自己的路由上。所以状态页由模块自带，探测请求
-# 用相对路径走同一条前缀。
-#
-# rs-c4d 是**无状态**的：不落库、不写文件，每次请求现算响应，所以没有数据卷。
+# 为什么把 1688 挪到 limiter 上：rs-c4d 只做全局限流（--pids），没有按来源的限制。
+# 限流放在纯 TCP 代理层，既不改 KMS 服务端，也不往宿主写防火墙规则。
+# 客户端侧完全无感：填的还是同一个域名与 1688。
 
 services:
   kms:
@@ -20,12 +22,14 @@ services:
     container_name: n1bus-rsc4d
     hostname: rsc4d
     restart: unless-stopped
-    ports:
-      - "1688:1688"          # 给客户端用的裸 TCP，不经反代
+    # 不再直接发布 1688：对外只有 limiter 一个入口，限流才拦得住
+    expose:
+      - "1688"
     environment:
       - TZ=Asia/Shanghai
-      - WEB_PORT=8080        # 镜像里 rs-c4d-web 的监听端口（状态页数据源）
-      - KMS_PIDS=256
+      - WEB_PORT=8080          # 镜像里 rs-c4d-web 的监听端口（状态页的数据源）
+      - KMS_PIDS=${KMS_PIDS:-256}
+      - KMS_STRICT_PRODUCTS=${KMS_STRICT_PRODUCTS:-0}
       # 逐请求日志是唯一的观测来源，关掉就只剩一个空壳
       - KMS_VERBOSE=1
     # 日志是排障与统计的唯一凭据，留够但别把磁盘吃掉
@@ -34,6 +38,32 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    networks:
+      - n1bus
+
+  limiter:
+    image: haproxy:2.9-alpine
+    container_name: n1bus-rsc4d-limiter
+    hostname: limiter
+    restart: unless-stopped
+    depends_on:
+      - kms
+    ports:
+      - "1688:1688"            # 客户端连的就是这里
+    environment:
+      - TZ=Asia/Shanghai
+      - KMS_RATE_LIMIT=${KMS_RATE_LIMIT:-60}
+      - KMS_BAN_TIME=${KMS_BAN_TIME:-600}
+    volumes:
+      # haproxy 的配置没有环境变量插值，参数靠入口脚本套模板进去（见 limiter-entry.sh）
+      - ./haproxy.cfg.tpl:/usr/local/etc/haproxy/haproxy.cfg.tpl:ro
+      - ./limiter-entry.sh:/limiter-entry.sh:ro
+    entrypoint: ["/bin/sh", "/limiter-entry.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - n1bus
 
@@ -47,6 +77,9 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./web:/srv:ro
+      # 面板写下的配置（域名、限流参数）。本体保证这个文件存在，所以是单文件挂载。
+      # 状态页据此显示客户端命令，而不是猜一个域名出来。
+      - ./config.json:/cfg/config.json:ro
     networks:
       - n1bus
 

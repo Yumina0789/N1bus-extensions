@@ -1,4 +1,4 @@
-# rsc4d 模块内部的 web 服务：状态页 + 把探测请求转给 KMS 容器。
+# rsc4d 模块内部的 web 服务：状态页 + 把探测请求转给 KMS 容器 + 暴露面板写下的配置。
 #
 # 外层（宿主上那个 Caddy）已经用 handle_path /m/rsc4d/* 把前缀剥掉，所以这里
 # 看到的就是 / 与 /healthz —— 页面里的 fetch 也写成相对路径，两边对得上。
@@ -12,6 +12,12 @@
 	# 探测：KMS 端口是否可达（rs-c4d-web 的 /healthz）
 	handle /healthz* {
 		reverse_proxy n1bus-rsc4d:8080
+	}
+
+	# 面板写下的配置。只放这一个文件出去 —— 模块目录里还有 .env，那是给 compose 用的。
+	handle /config.json {
+		root * /cfg
+		file_server
 	}
 
 	file_server
